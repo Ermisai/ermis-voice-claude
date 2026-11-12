@@ -127,6 +127,7 @@ Um daemon por computador atende todas as janelas do Claude Code, e a voz fala **
 ermis-voz chave                                    # troca a chave (conferida antes de salvar)
 ermis-voz vozes                                    # as vozes da sua conta
 ermis-voz config --paciencia longa --voz Bruno
+ermis-voz config --velocidade 1.2       # fala mais rápido (0.75 a 1.25; 1 é a normal), sem mudar o tom
 ermis-voz config --set preenchimento=false --set leitura_max_s=60          # qualquer campo do config.json
 ermis-voz config --set "frases_preenchimento=Um momento.|Deixa eu ver."     # listas separadas por |
 ```

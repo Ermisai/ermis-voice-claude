@@ -48,7 +48,7 @@ QUADRO = 160  # 20 ms de μ-law 8 kHz
 SILENCIO = b"\xff" * QUADRO
 # a API encerra a sessão depois de 60 s sem áudio: com o microfone mudo (leitura), manda silêncio
 KEEPALIVE_S = 2.0
-# paciência -> silêncio que fecha o turno (o detector de fim de turno da API fecha antes quando a pessoa terminou a ideia)
+# paciência -> silêncio que fecha o turno (o modelo de fim de turno da API fecha antes quando a pessoa terminou a ideia)
 SILENCIO_MS = {"rapida": 500, "normal": 900, "longa": 1600}
 DURACAO_MAX_S = 4 * 3600  # o teto da API; ao fim, o daemon abre outra sessão
 
@@ -70,6 +70,17 @@ _MOTIVOS = {
     429: ("todos os canais do seu plano estão em uso (outra máquina com a voz ligada?)", 30.0),
 }
 _FECHAMENTOS = {4001: 401, 4002: 402, 4029: 429}
+
+
+VELOCIDADE_MIN, VELOCIDADE_MAX = 0.75, 1.25  # o que a Voice API aceita em speech_speed
+
+
+def limitar_velocidade(valor: object) -> float:
+    try:
+        v = float(valor)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return 1.0
+    return 1.0 if v != v else min(VELOCIDADE_MAX, max(VELOCIDADE_MIN, v))
 
 
 def erro_http(status: int, corpo: str) -> ErroApi:
@@ -134,7 +145,8 @@ class Para8k:
 
 # ── o canal ──────────────────────────────────────────────────────────────
 class VoiceApi:
-    def __init__(self, url: str, chave: str, *, voz: str = "", paciencia: str = "normal", barge_in: bool = True,
+    def __init__(self, url: str, chave: str, *, voz: str = "", velocidade: float = 1.0, paciencia: str = "normal",
+                 barge_in: bool = True,
                  termos: list[str] | None = None, aprendidos: dict[str, str] | None = None, projeto: str = "",
                  connect=None, http=None) -> None:
         url = (url or API_PADRAO).rstrip("/")
@@ -147,6 +159,7 @@ class VoiceApi:
         self.url = url
         self.chave = chave
         self.voz = voz
+        self.velocidade = limitar_velocidade(velocidade)
         self.paciencia = paciencia if paciencia in SILENCIO_MS else "normal"
         self.barge_in = barge_in
         self.projeto = projeto
@@ -187,6 +200,8 @@ class VoiceApi:
         }
         if self.voz:
             corpo["voice"] = self.voz
+        if abs(self.velocidade - 1.0) > 1e-3:
+            corpo["speech_speed"] = self.velocidade
         return corpo
 
     def _vocabulario(self) -> list[str]:
@@ -210,6 +225,11 @@ class VoiceApi:
         finally:
             if self._http is None:
                 await http.aclose()
+        if resp.status_code == 400 and "speech_speed" in resp.text and "speech_speed" in self._opcoes():
+            # uma Voice API anterior à velocidade da fala: a voz funciona, na velocidade normal
+            log.warning("esta Voice API ainda não aceita velocidade da fala; seguindo na velocidade normal")
+            self.velocidade = 1.0
+            return await self._criar_sessao()
         if resp.status_code >= 300:
             raise erro_http(resp.status_code, resp.text)
         return resp.json()

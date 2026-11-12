@@ -1,6 +1,6 @@
 ---
 description: Mostra ou muda a configuração da voz (chave, paciência, voz, fila, frases de espera, leitura…); vale na hora
-argument-hint: "[--voz NOME] [--paciencia rapida|normal|longa] [--set campo=valor ...]"
+argument-hint: "[--voz NOME] [--velocidade 0.75-1.25] [--paciencia rapida|normal|longa] [--set campo=valor ...]"
 allowed-tools: Bash(ermis-voz config:*), Bash(ermis-voz status:*), Bash(ermis-voz vozes:*)
 ---
 
@@ -8,6 +8,9 @@ Rode `ermis-voz config $ARGUMENTS` (sem argumentos, só mostra a configuração;
 
 - A chave de API (campo `token`) se troca com `/ermis-voice:chave`, que confere antes de salvar.
 - Para trocar a voz, `ermis-voz vozes` lista as da conta; depois `--voz NOME`.
+- Velocidade da fala: `--velocidade` de 0.75 (mais devagar) a 1.25 (mais rápido); 1 é a normal. "Fala mais rápido"
+  vira `--velocidade 1.15` (e mais um pouco a cada pedido, até 1.25); "mais devagar", `--velocidade 0.9`. Vale na
+  próxima sessão de voz, e só quando a Voice API já tiver a velocidade da fala; antes disso a voz segue na normal.
 - Várias janelas do Claude falando: `--set fila_max=N` (quantas falas esperam a vez).
 
 - Se a pessoa pediu uma mudança em palavras ("deixa mais paciente", "desliga a frase de espera", "lê no máximo um

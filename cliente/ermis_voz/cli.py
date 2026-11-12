@@ -93,7 +93,7 @@ def _config(args) -> int:
 
     cfg = Config.load()
     mudou = False
-    for key in ("servidor", "token", "paciencia", "voz", "aec", "entrada", "saida"):
+    for key in ("servidor", "token", "paciencia", "voz", "velocidade", "aec", "entrada", "saida"):
         value = getattr(args, key)
         if value is not None:
             setattr(cfg, key, value)
@@ -252,6 +252,7 @@ def main(argv: list[str] | None = None) -> int:
     c = sub.add_parser("config", help="mostra ou muda a configuração (vale na hora)")
     for key in ("servidor", "token", "paciencia", "voz", "aec", "entrada", "saida"):
         c.add_argument(f"--{key}")
+    c.add_argument("--velocidade", type=float, help="da fala: 0.75 (mais devagar) a 1.25 (mais rápido); 1 é a normal")
     c.add_argument("--set", action="append", metavar="CAMPO=VALOR",
                    help="qualquer campo do config.json, ex.: --set preenchimento=false --set leitura_max_s=60")
     ch = sub.add_parser("chave", help="cola a sua chave de API da Ermis, confere e salva")

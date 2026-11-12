@@ -64,6 +64,72 @@ class Decimador:
         return out
 
 
+class Acelerador:
+    """Fala mais rápida sem mudar o tom (WSOLA), em fluxo: o áudio entra em pedaços e sai encurtado por ``velocidade``.
+
+    Janelas Hann de 40 ms com 50% de sobreposição na saída; na entrada elas andam ``velocidade`` vezes mais, e cada
+    uma é escolhida (até ±10 ms) onde melhor continua a anterior, para não sair engasgado. Segura ~60 ms; ``terminar``
+    devolve o resto no fim de cada fala.
+    """
+
+    W = 1920  # 40 ms a 48 kHz
+    HS = W // 2
+    TOL = 480
+
+    def __init__(self, velocidade: float) -> None:
+        self.velocidade = velocidade
+        self.ha = int(round(self.HS * velocidade))
+        n = np.arange(self.W)
+        self.janela = (0.5 - 0.5 * np.cos(2 * np.pi * n / self.W)).astype(np.float32)  # periódica: soma 1 a 50%
+        self.reiniciar()
+
+    def reiniciar(self) -> None:
+        self.entrada = np.zeros(0, dtype=np.float32)
+        self.pos = 0  # onde a próxima janela começaria, sem ajuste
+        self.resto_desde = 0  # a segunda metade da última janela usada começa aqui
+        self.natural: np.ndarray | None = None  # o que vinha depois da última janela: a próxima deve parecer com isso
+        self.acumulado = np.zeros(self.W, dtype=np.float32)
+
+    def processar(self, x: np.ndarray) -> np.ndarray:
+        self.entrada = np.concatenate([self.entrada, x.astype(np.float32)])
+        saida = []
+        while True:
+            if self.natural is None:
+                if self.pos + self.W + self.HS > self.entrada.size:
+                    break
+                inicio = self.pos
+            else:
+                lo = max(0, self.pos - self.TOL)
+                hi = self.pos + self.TOL
+                if hi + self.W + self.HS > self.entrada.size:
+                    break
+                corr = np.correlate(self.entrada[lo:hi + self.W], self.natural, mode="valid")
+                inicio = lo + int(np.argmax(corr))
+            self.acumulado += self.entrada[inicio:inicio + self.W] * self.janela
+            saida.append(self.acumulado[:self.HS].copy())
+            self.acumulado = np.concatenate([self.acumulado[self.HS:], np.zeros(self.HS, dtype=np.float32)])
+            self.natural = self.entrada[inicio + self.HS:inicio + self.HS + self.W].copy()
+            self.resto_desde = inicio + self.HS
+            self.pos += self.ha
+            corte = max(0, min(self.pos - self.TOL, self.resto_desde))
+            if corte:
+                self.entrada = self.entrada[corte:]
+                self.pos -= corte
+                self.resto_desde -= corte
+        return np.concatenate(saida) if saida else np.zeros(0, dtype=np.float32)
+
+    def terminar(self) -> np.ndarray:
+        """O fim da fala: a metade final da última janela completada pelo que sobrou da entrada, sem acelerar."""
+        if self.natural is None:
+            resto = self.entrada.copy()
+        else:
+            resto = self.entrada[self.resto_desde:].copy()
+            n = min(self.HS, resto.size)
+            resto[:n] = self.acumulado[:n] + resto[:n] * (1.0 - self.janela[self.HS:self.HS + n])
+        self.reiniciar()
+        return resto
+
+
 class Reproducao:
     """Fila do que vai tocar (48 kHz), consumida pelo callback de áudio, com um ganho que muda em rampa.
 
@@ -82,6 +148,24 @@ class Reproducao:
         self._alvo = 1.0
         self._passo = 1.0  # quanto o ganho anda por amostra
         self._limpar_no_zero = False
+        self._acelerador: Acelerador | None = None
+
+    @property
+    def velocidade(self) -> float:
+        return self._acelerador.velocidade if self._acelerador else 1.0
+
+    @velocidade.setter
+    def velocidade(self, valor: float) -> None:
+        """A fala do agente mais rápida (ou mais lenta) aqui, quando a Voice API não faz isso."""
+        self._acelerador = Acelerador(valor) if abs(valor - 1.0) > 1e-3 else None
+
+    def nova_fala(self) -> None:
+        if self._acelerador is not None:
+            self._acelerador.reiniciar()
+
+    def fim_fala(self) -> None:
+        if self._acelerador is not None:
+            self._adicionar(self._acelerador.terminar(), acelerar=False)
 
     def adicionar_pcm24(self, pcm: bytes) -> None:
         audio = np.frombuffer(pcm[: len(pcm) - len(pcm) % 2], dtype="<i2").astype(np.float32) / 32768.0
@@ -91,7 +175,9 @@ class Reproducao:
         """O áudio da Voice API (PCM16 48 kHz): já na taxa do alto-falante."""
         self._adicionar(np.frombuffer(pcm[: len(pcm) - len(pcm) % 2], dtype="<i2").astype(np.float32) / 32768.0)
 
-    def _adicionar(self, up: np.ndarray) -> None:
+    def _adicionar(self, up: np.ndarray, acelerar: bool = True) -> None:
+        if acelerar and self._acelerador is not None:
+            up = self._acelerador.processar(up)
         with self._lock:
             if self._limpar_no_zero:  # o que chega enquanto apaga já foi cortado
                 return
@@ -118,6 +204,7 @@ class Reproducao:
         self._rampa(0.0, ms, limpar=True)
 
     def limpar(self) -> None:
+        self.nova_fala()
         with self._lock:
             self._buf = np.zeros(0, dtype=np.float32)
             self._gain, self._alvo, self._limpar_no_zero = 1.0, 1.0, False

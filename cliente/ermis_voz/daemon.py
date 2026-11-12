@@ -234,7 +234,8 @@ class Daemon:
                 SOCKET_PATH.unlink()
 
     def _canal(self, termos: list[str]) -> VoiceApi:
-        return VoiceApi(self.cfg.servidor, self.cfg.token, voz=self.cfg.voz, paciencia=self.cfg.paciencia,
+        return VoiceApi(self.cfg.servidor, self.cfg.token, voz=self.cfg.voz, velocidade=self.cfg.velocidade,
+                        paciencia=self.cfg.paciencia,
                         barge_in=self.cfg.barge_in, termos=termos, aprendidos=aprendidos(),
                         projeto=Path(self.projeto).name)
 
@@ -243,6 +244,8 @@ class Daemon:
         async with self._canal(termos) as canal:
             self.ws = canal
             self.sessao = canal.sessao
+            # a velocidade da fala: na Voice API se ela aceitou; senão aqui, no áudio que chega
+            self.audio.reproducao.velocidade = self.cfg.velocidade if canal.velocidade == 1.0 else 1.0
             self.ultimo_erro = ""
             self.conectado.set()
             self._modo_enviado = None
@@ -268,6 +271,7 @@ class Daemon:
             self.fala_atual = fala
             self.fala_agente = fala.texto
             rep = self.audio.reproducao
+            rep.nova_fala()
             if rep.apagando:
                 rep.limpar()  # o fim da fala cortada não pode comer o começo desta
             else:
@@ -275,6 +279,8 @@ class Daemon:
             self._mudar("claude_falando")
         elif kind == "audio_fim":
             fala = self.falas.get(msg.get("id"))
+            if fala is self.fala_atual and not (fala and fala.cortado):
+                self.audio.reproducao.fim_fala()  # o fim que o acelerador segurava
             if fala:
                 fala.recebido_fim = True
                 asyncio.ensure_future(self._esperar_tocar(fala))
@@ -952,10 +958,10 @@ class Daemon:
         if cmd == "recarregar":
             # a configuração mudou: vale já, sem reiniciar. Antes da checagem de conexão: é desconectado (servidor ou
             # token errados) que a pessoa mais precisa corrigir a configuração
-            # a voz e a paciência são fixadas na criação da sessão: mudar qualquer um destes abre outra
-            antigo = (self.cfg.servidor, self.cfg.token, self.cfg.voz, self.cfg.paciencia)
+            # a voz, a velocidade e a paciência são fixadas na criação da sessão: mudar qualquer um destes abre outra
+            antigo = (self.cfg.servidor, self.cfg.token, self.cfg.voz, self.cfg.velocidade, self.cfg.paciencia)
             self.cfg = Config.load()
-            reconecta = (self.cfg.servidor, self.cfg.token, self.cfg.voz, self.cfg.paciencia) != antigo
+            reconecta = (self.cfg.servidor, self.cfg.token, self.cfg.voz, self.cfg.velocidade, self.cfg.paciencia) != antigo
             if reconecta and self.ws is not None:
                 with contextlib.suppress(Exception):
                     await self.ws.enviar({"type": "fim"})

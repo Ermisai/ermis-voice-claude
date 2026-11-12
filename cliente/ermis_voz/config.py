@@ -15,7 +15,7 @@ SOCKET_PATH = HOME / "daemon.sock"
 MODO_PATH = HOME / "modo"  # ferramenta | maos_livres | comando | leitura | desligado
 APRENDIDOS_PATH = HOME / "aprendidos.json"
 LOG_PATH = HOME / "daemon.log"
-ESTADO_PATH = HOME / "estado.json"  # lido pelo painel (plugin ermis-voice-painel)
+ESTADO_PATH = HOME / "estado.json"  # lido pelo painel (plugin ermis-voz-painel)
 ATIVA_PATH = HOME / "ativa.json"  # escrito pelo painel da janela em uso: {sessao, t, cwd}
 ATIVA_MS = 6000  # sem renovação por este tempo, nenhuma janela está em uso (não há quem veja a transcrição ao vivo)
 
@@ -34,6 +34,7 @@ class Config:
     token: str = ""  # a sua chave de API da Ermis (app.ermis.ai, Tokens API)
     paciencia: str = "normal"  # rapida | normal | longa
     voz: str = ""  # vazio: a padrão da conta (`ermis-voz vozes` lista as outras)
+    velocidade: float = 1.0  # da fala, de 0.75 (mais devagar) a 1.25 (mais rápido), sem mudar o tom
     aec: str = "webrtc"  # webrtc | nenhum
     entrada: str = ""  # nome do microfone (vazio: o padrão)
     saida: str = ""  # nome do alto-falante (vazio: o padrão)

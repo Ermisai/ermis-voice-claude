@@ -125,3 +125,28 @@ def test_erros_http_viram_mensagens_uteis():
     assert "créditos" in str(erro_http(402, "{}"))
     assert "canais" in str(erro_http(429, '{"error": {"code": "channel_limit"}}'))
     assert erro_http(429, '{"error": {"code": "rate_limited"}}').espera_s == 10.0
+
+
+def test_velocidade_da_fala_vai_na_sessao_so_quando_muda():
+    assert "speech_speed" not in VoiceApi("https://x", "k")._opcoes()
+    assert VoiceApi("https://x", "k", velocidade=1.2)._opcoes()["speech_speed"] == 1.2
+    assert VoiceApi("https://x", "k", velocidade=3)._opcoes()["speech_speed"] == 1.25
+    assert VoiceApi("https://x", "k", velocidade=0.5)._opcoes()["speech_speed"] == 0.75
+
+
+async def test_api_sem_velocidade_cai_para_a_normal():
+    import httpx
+
+    pedidos = []
+
+    def handler(request):
+        corpo = json.loads(request.content)
+        pedidos.append(corpo)
+        if "speech_speed" in corpo:
+            return httpx.Response(400, json={"error": "invalid_request", "message": "speech_speed: Extra inputs"})
+        return httpx.Response(201, json={"session_id": "vs_1"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
+        c = VoiceApi("https://x", "k", velocidade=1.2, http=http)
+        assert (await c._criar_sessao())["session_id"] == "vs_1"
+    assert ["speech_speed" in p for p in pedidos] == [True, False]
