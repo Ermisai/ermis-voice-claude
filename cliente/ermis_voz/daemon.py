@@ -952,9 +952,10 @@ class Daemon:
         if cmd == "recarregar":
             # a configuração mudou: vale já, sem reiniciar. Antes da checagem de conexão: é desconectado (servidor ou
             # token errados) que a pessoa mais precisa corrigir a configuração
-            antigo = (self.cfg.servidor, self.cfg.token)
+            # a voz e a paciência são fixadas na criação da sessão: mudar qualquer um destes abre outra
+            antigo = (self.cfg.servidor, self.cfg.token, self.cfg.voz, self.cfg.paciencia)
             self.cfg = Config.load()
-            reconecta = (self.cfg.servidor, self.cfg.token) != antigo
+            reconecta = (self.cfg.servidor, self.cfg.token, self.cfg.voz, self.cfg.paciencia) != antigo
             if reconecta and self.ws is not None:
                 with contextlib.suppress(Exception):
                     await self.ws.enviar({"type": "fim"})

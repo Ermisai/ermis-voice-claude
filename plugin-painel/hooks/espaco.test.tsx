@@ -97,3 +97,22 @@ test('a fala de um aperto em outra janela não é enviada aqui', async ($, on) =
   await clock.advance(600)
   expect(enviados).toEqual([])
 })
+
+test('com o agente falando, o primeiro aperto do espaço já o cala', async ($, on) => {
+  const { comandos } = montar(on, () => arquivo({ estado: 'claude_falando', fala_agente: 'Rodei os testes.' }))
+  on('state.get', (_, e) => ({
+    value: { value: e.key === 'estado' ? JSON.parse(arquivo({ estado: 'claude_falando' })) : false, version: 1 },
+  }))
+  await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: true })
+  await $.prompt.edit(espaco())
+  expect(comandos[0]).toEqual(['ermis-voz', 'parar'])
+})
+
+test('sem o agente falando, um toque não cala nada', async ($, on) => {
+  const { clock, comandos } = montar(on, () => arquivo({}))
+  on('state.get', (_, e) => ({ value: { value: e.key === 'estado' ? JSON.parse(arquivo({})) : false, version: 1 } }))
+  await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: true })
+  await $.prompt.edit(espaco())
+  await clock.advance(1500)
+  expect(comandos).toEqual([])
+})

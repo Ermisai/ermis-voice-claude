@@ -56,6 +56,12 @@ async function marcar($: EngineInterface, forcar = false): Promise<void> {
   await update($, ativa, () => true)
 }
 
+// O agente falando (ou com falas na fila): o primeiro aperto do espaço já o cala, sem esperar saber se é toque ou
+// segurar. Fora da fila de segurar/soltar: é o que precisa ser mais rápido
+function calar($: EngineInterface): void {
+  void $.process.run(['ermis-voz', 'parar'], { timeoutMs: 10000 }).catch(() => undefined)
+}
+
 function espaco($: EngineInterface, acao: 'segurar' | 'soltar', t?: number): void {
   // em ordem: o soltar nunca chega antes do segurar
   filaEspaco = filaEspaco.then(async () => {
@@ -185,6 +191,10 @@ export const register: Register = on => {
       const agora = await $.clock.now()
       if (aperto === null) {
         aperto = { t0: agora, ultimo: agora, repeticoes: e.inputText.length - 1, gravando: false, soltar: false }
+        const v = await read($, estado)
+        if (v !== null && agora - v.t < VELHO_MS && (v.estado === 'claude_falando' || (v.fila ?? 0) > 0)) {
+          calar($)
+        }
       } else {
         aperto.ultimo = agora
         aperto.repeticoes += e.inputText.length

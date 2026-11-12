@@ -1,7 +1,7 @@
 {
   "name": "ermis-voice",
   "description": "Voz em português no Claude Code pela Ermis Voice API (com a sua chave de API): fale com o Claude e ouça as respostas, com cancelamento de eco, interrupção por voz, fila entre janelas e correção de termos técnicos pelo contexto.",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "author": {
     "name": "Ermis",
     "url": "https://www.ermis.ai"

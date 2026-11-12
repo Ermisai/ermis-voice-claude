@@ -14,6 +14,8 @@ export type EstadoVoz = {
   fala_agente: string
   /** Falas guardadas para o Claude ler depois da próxima ferramenta. */
   pendentes: number
+  /** Falas do agente esperando a vez de tocar. */
+  fila?: number
   modo: string
   aec: boolean
   servidor: string

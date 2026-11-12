@@ -1,6 +1,6 @@
 [project]
 name = "ermis-voz"
-version = "0.6.0"
+version = "0.6.1"
 description = "Ermis Voice para o Claude Code: voz em pt-BR pela Ermis Voice API — microfone com cancelamento de eco, MCP, hooks e plugin."
 requires-python = ">=3.11"
 license = { text = "MIT" }

@@ -78,6 +78,8 @@ segurou. Com texto no prompt, o espaço é só espaço; um toque rápido não gr
 - O terminal não avisa quando a tecla é solta: o painel vê a repetição automática do espaço e entende que você
   soltou quando ela para. Se a sua repetição de teclas está muito lenta ou desligada (Ajustes do Sistema → Teclado),
   segurar não é reconhecido.
+- Com o agente falando, o primeiro aperto do espaço já o cala (a fala em curso e as que esperam a vez), mesmo num
+  toque rápido; segurando, você continua e fala por cima.
 - O começo da fala não se perde: o daemon guarda os últimos 3 s do microfone (só na memória) e manda desde o aperto.
 - Fora dos modos de voz (ferramenta ou desligado), o primeiro aperto liga o modo `espaco`: o microfone fica fechado
   e só vai para a Voice API enquanto você segura o espaço. Sem uso por `ocioso_s`, a sessão fecha (e a cobrança
