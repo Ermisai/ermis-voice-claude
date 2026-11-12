@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ermis-voz": {
+      "type": "stdio",
+      "command": "ermis-voz",
+      "args": ["mcp"]
+    }
+  }
+}

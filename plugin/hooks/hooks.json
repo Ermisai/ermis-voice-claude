@@ -1,0 +1,40 @@
+{
+  "description": "Ermis Voz: o que a pessoa diz durante o trabalho entra como contexto; no modo mãos livres, a resposta é falada e a resposta falada da pessoa continua a conversa; no modo leitura, a resposta é só falada.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "ermis-voz hook session-start", "timeout": 20 }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "ermis-voz hook user-prompt-submit", "timeout": 5 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          { "type": "command", "command": "ermis-voz hook post-tool-use", "timeout": 5 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "ermis-voz hook stop", "timeout": 900 }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          { "type": "command", "command": "ermis-voz hook notification", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}

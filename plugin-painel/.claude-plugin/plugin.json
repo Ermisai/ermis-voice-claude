@@ -1,0 +1,20 @@
+{
+  "name": "ermis-voice-painel",
+  "version": "0.6.0",
+  "author": {
+    "name": "Ermis",
+    "url": "https://www.ermis.ai"
+  },
+  "description": "Segure o espaço (com o prompt vazio) para falar, e veja ao vivo, acima do prompt, o que você está falando e o estado da voz (ouvindo, falando, Claude pensando, Claude falando).",
+  "types": "./types/index.d.ts",
+  "homepage": "https://github.com/Ermisai/ermis-voice-claude",
+  "repository": "https://github.com/Ermisai/ermis-voice-claude",
+  "license": "MIT",
+  "keywords": [
+    "voz",
+    "voice",
+    "pt-BR",
+    "speech",
+    "push-to-talk"
+  ]
+}

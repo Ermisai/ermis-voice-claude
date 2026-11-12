@@ -1,0 +1,24 @@
+{
+  "name": "ermis",
+  "metadata": {
+    "description": "Plugins da Ermis para o Claude Code"
+  },
+  "owner": {
+    "name": "Ermis",
+    "url": "https://www.ermis.ai"
+  },
+  "plugins": [
+    {
+      "name": "ermis-voice",
+      "description": "Voz em português no Claude Code pela Ermis Voice API: fale com o Claude e ouça as respostas, com cancelamento de eco, interrupção por voz e correção de termos técnicos.",
+      "source": "./plugin",
+      "category": "productivity"
+    },
+    {
+      "name": "ermis-voice-painel",
+      "description": "Segure o espaço para falar, e veja ao vivo, acima do prompt, o que você está falando e o estado da voz.",
+      "source": "./plugin-painel",
+      "category": "productivity"
+    }
+  ]
+}
